@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏃 Traitement Résultats Sportifs - Unified</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto Condensed', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            animation: gradientShift 10s ease infinite;
+            background-size: 200% 200%;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 2.8em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .config-section {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .config-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.8em;
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .config-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .config-item label {
+            display: block;
+            font-weight: 700;
+            color: #764ba2;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .config-item select {
+            width: 100%;
+            padding: 12px;
+            font-size: 1em;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .config-item select:hover {
+            border-color: #764ba2;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .config-item select:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        button, .file-input-wrapper {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Roboto Condensed', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.6);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-input-wrapper:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        #statusMessage {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 700;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+
+        #statsContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+            display: none;
+        }
+
+        .stat-card {
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #previewContainer {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: #f5f7fa;
+            border: 2px solid transparent;
+            border-radius: 10px 10px 0 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 700;
+            color: #666;
+        }
+
+        .tab:hover {
+            background: #e3f2fd;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9em;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:nth-child(even) {
+            background: #F8F9FF;
+        }
+
+        tr:nth-child(odd) {
+            background: #F0F8FF;
+        }
+
+        tr:hover {
+            background: #bbdefb !important;
+        }
+
+        .row-pm {
+            background: #FFF9CC !important;
+        }
+
+        .row-aberrant {
+            background: #FFCCCC !important;
+        }
+
+        .cell-green {
+            background: #c8e6c9 !important;
+            font-weight: 700;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button, .file-input-wrapper {
+                width: 100%;
+            }
+
+            #statsContainer {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏃 Traitement Résultats Sportifs</h1>
+            <p>Application unifiée de traitement de résultats - Laser RUN, RAID, One Man Relay</p>
+        </div>
+
+        <div class="content">
+            <div class="config-section">
+                <div class="config-title">⚙️ Configuration du Traitement</div>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label for="inputType">📥 Type de fichier à importer :</label>
+                        <select id="inputType">
+                            <option value="">-- Sélectionner le type de fichier --</option>
+                            <option value="laserrun-excel">Laser RUN - Excel EasyGEC (.xls/.xlsx)</option>
+                            <option value="raid-csv">RAID - CSV GeRAID</option>
+                            <option value="omr-csv">One Man Relay - CSV EasyGEC</option>
+                        </select>
+                    </div>
+                    <div class="config-item">
+                        <label for="outputType">📤 Format de sortie souhaité :</label>
+                        <select id="outputType">
+                            <option value="">-- Sélectionner le format --</option>
+                            <option value="excel">Excel (.xlsx)</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <label class="file-input-wrapper">
+                    <input type="file" id="fileInput" accept=".xls,.xlsx,.csv" disabled>
+                    📁 Importer le fichier
+                </label>
+                <button id="downloadBtn" class="btn-success" disabled>💾 Télécharger Résultats Traités</button>
+            </div>
+
+            <div id="statusMessage"></div>
+
+            <div id="statsContainer"></div>
+
+            <div id="previewContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let processedData = null;
+        let currentInputType = '';
+        let currentOutputType = '';
+
+        // Gestion des menus déroulants
+        document.getElementById('inputType').addEventListener('change', function() {
+            currentInputType = this.value;
+            updateFileInput();
+            resetData();
+        });
+
+        document.getElementById('outputType').addEventListener('change', function() {
+            currentOutputType = this.value;
+            updateDownloadButton();
+        });
+
+        function updateFileInput() {
+            const fileInput = document.getElementById('fileInput');
+            const inputType = document.getElementById('inputType').value;
+            
+            if (inputType === 'laserrun-excel') {
+                fileInput.accept = '.xls,.xlsx';
+                fileInput.disabled = false;
+            } else if (inputType === 'raid-csv' || inputType === 'omr-csv') {
+                fileInput.accept = '.csv';
+                fileInput.disabled = false;
+            } else {
+                fileInput.disabled = true;
+            }
+        }
+
+        function updateDownloadButton() {
+            const downloadBtn = document.getElementById('downloadBtn');
+            if (processedData && currentOutputType) {
+                downloadBtn.disabled = false;
+            } else {
+                downloadBtn.disabled = true;
+            }
+        }
+
+        function resetData() {
+            processedData = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('downloadBtn').disabled = true;
+            document.getElementById('previewContainer').style.display = 'none';
+            document.getElementById('statsContainer').style.display = 'none';
+            document.getElementById('statusMessage').style.display = 'none';
+        }
+
+        // Gestion de l'import de fichier
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!currentInputType) {
+                showStatus('Veuillez sélectionner un type de fichier à importer', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+
+            if (currentInputType === 'laserrun-excel') {
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        processLaserRun(workbook);
+                    } catch (error) {
+                        showStatus('Erreur lors de la lecture du fichier Excel: ' + error.message, 'error');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else if (currentInputType === 'raid-csv') {
+                reader.onload = function(e) {
+                    Papa.parse(e.target.result, {
+                        complete: function(results) {
+                            processRaid(results.data);
+                        },
+                        error: function(error) {
+                            showStatus('Erreur lors de la lecture du CSV: ' + error.message, 'error');
+                        }
+                    });
+                };
+                reader.readAsText(file);
+            } else if (currentInputType === 'omr-csv') {
+                reader.onload = function(e) {
+                    Papa.parse(e.target.result, {
+                        complete: function(results) {
+                            processOMR(results.data);
+                        },
+                        error: function(error) {
+                            showStatus('Erreur lors de la lecture du CSV: ' + error.message, 'error');
+                        }
+                    });
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Gestion du téléchargement
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            if (!processedData || !currentOutputType) {
+                showStatus('Aucune donnée à exporter', 'error');
+                return;
+            }
+
+            try {
+                if (currentOutputType === 'excel') {
+                    downloadExcel();
+                } else if (currentOutputType === 'csv') {
+                    downloadCSV();
+                }
+            } catch (error) {
+                showStatus('Erreur lors de l\'export: ' + error.message, 'error');
+            }
+        });
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status-' + type;
+            statusDiv.style.display = 'block';
+        }
+
+        // ===== LASER RUN =====
+        function processLaserRun(workbook) {
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true, defval: '' });
+
+            console.log('Nombre de lignes totales:', data.length);
+
+            const parcoursConfig = {
+                'Duo Novice': {
+                    order: 1,
+                    segments: [
+                        { name: 'Temps Course 1', start: 'AS', end: 'AV', threshold: 45 },
+                        { name: 'Temps Tir 1', start: 'AV', end: 'AX', threshold: 40 },
+                        { name: 'Temps Course 2', start: 'AX', end: 'AZ', threshold: 45 },
+                        { name: 'Temps Tir 2', start: 'AZ', end: 'BB', threshold: 40 },
+                        { name: 'Temps Course 3', start: 'BB', end: 'BD', threshold: 45 },
+                        { name: 'Temps Tir 3', start: 'BD', end: 'BF', threshold: 40 }
+                    ],
+                    totalThreshold: 255
+                },
+                'Duo Initié': {
+                    order: 2,
+                    segments: [
+                        { name: 'Temps Course 1', start: 'AS', end: 'AV', threshold: 45 },
+                        { name: 'Temps Tir 1', start: 'AV', end: 'AX', threshold: 40 },
+                        { name: 'Temps Course 2', start: 'AX', end: 'BB', threshold: 90 },
+                        { name: 'Temps Tir 2', start: 'BB', end: 'BD', threshold: 40 },
+                        { name: 'Temps Course 3', start: 'BD', end: 'BF', threshold: 45 },
+                        { name: 'Temps Tir 3', start: 'BF', end: 'BH', threshold: 40 }
+                    ],
+                    totalThreshold: 300
+                },
+                'Duo Performant': {
+                    order: 3,
+                    segments: [
+                        { name: 'Temps Course 1', start: 'AS', end: 'AX', threshold: 90 },
+                        { name: 'Temps Tir 1', start: 'AX', end: 'AZ', threshold: 40 },
+                        { name: 'Temps Course 2', start: 'AZ', end: 'BF', threshold: 135 },
+                        { name: 'Temps Tir 2', start: 'BF', end: 'BH', threshold: 40 },
+                        { name: 'Temps Course 3', start: 'BH', end: 'BJ', threshold: 45 },
+                        { name: 'Temps Tir 3', start: 'BJ', end: 'BL', threshold: 40 }
+                    ],
+                    totalThreshold: 390
+                },
+                'Duo Performants': {
+                    order: 4,
+                    segments: [
+                        { name: 'Temps Course 1', start: 'AS', end: 'AX', threshold: 90 },
+                        { name: 'Temps Tir 1', start: 'AX', end: 'AZ', threshold: 40 },
+                        { name: 'Temps Course 2', start: 'AZ', end: 'BF', threshold: 135 },
+                        { name: 'Temps Tir 2', start: 'BF', end: 'BH', threshold: 40 },
+                        { name: 'Temps Course 3', start: 'BH', end: 'BJ', threshold: 45 },
+                        { name: 'Temps Tir 3', start: 'BJ', end: 'BL', threshold: 40 }
+                    ],
+                    totalThreshold: 390
+                },
+                'Duo Expert': {
+                    order: 5,
+                    segments: [
+                        { name: 'Temps Course 1', start: 'AS', end: 'AZ', threshold: 135 },
+                        { name: 'Temps Tir 1', start: 'AZ', end: 'BB', threshold: 40 },
+                        { name: 'Temps Course 2', start: 'BB', end: 'BH', threshold: 135 },
+                        { name: 'Temps Tir 2', start: 'BH', end: 'BJ', threshold: 40 },
+                        { name: 'Temps Course 3', start: 'BJ', end: 'BP', threshold: 135 },
+                        { name: 'Temps Tir 3', start: 'BP', end: 'BR', threshold: 40 }
+                    ],
+                    totalThreshold: 525
+                }
+            };
+
+            const runners = [];
+            let ignoredCount = 0;
+
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                const name = row[3];
+                const parcours = row[18];
+
+                if (!name || !parcours || 
+                    parcours.toLowerCase().includes('court') || 
+                    parcours.toLowerCase().includes('nom') || 
+                    parcours.toLowerCase().includes('temps') ||
+                    parcours === '') {
+                    ignoredCount++;
+                    continue;
+                }
+
+                const totalTime = getCellValue(row, 'L');
+                const totalTimeSeconds = timeToSeconds(totalTime);
+
+                const isAberrant = (row[9] === '23:59:59' || row[10] === '23:59:59');
+
+                let pmCount = 0;
+                for (let col = 46; col <= 63; col++) {
+                    if (row[col] && String(row[col]).toUpperCase().includes('PM')) {
+                        pmCount++;
+                    }
+                }
+
+                const config = parcoursConfig[parcours];
+                if (!config) continue;
+
+                const segments = {};
+                config.segments.forEach(seg => {
+                    const startIdx = colToIndex(seg.start);
+                    const endIdx = colToIndex(seg.end);
+                    const segTime = calculateTimeDiff(row, startIdx, endIdx);
+                    segments[seg.name] = {
+                        time: segTime,
+                        threshold: seg.threshold
+                    };
+                });
+
+                runners.push({
+                    name,
+                    parcours,
+                    totalTime: totalTimeSeconds,
+                    totalTimeStr: secondsToTime(totalTimeSeconds),
+                    segments,
+                    pmCount,
+                    isAberrant,
+                    config
+                });
+            }
+
+            console.log('Lignes ignorées:', ignoredCount);
+            console.log('Coureurs traités:', runners.length);
+
+            // Grouper par parcours
+            const parcoursGroups = {};
+            runners.forEach(runner => {
+                if (!parcoursGroups[runner.parcours]) {
+                    parcoursGroups[runner.parcours] = [];
+                }
+                parcoursGroups[runner.parcours].push(runner);
+            });
+
+            // Classer dans chaque parcours
+            Object.keys(parcoursGroups).forEach(parcours => {
+                const group = parcoursGroups[parcours];
+                
+                const normal = group.filter(r => !r.isAberrant && r.pmCount === 0);
+                const withPM = group.filter(r => !r.isAberrant && r.pmCount > 0);
+                const aberrant = group.filter(r => r.isAberrant);
+
+                normal.sort((a, b) => a.totalTime - b.totalTime);
+                withPM.sort((a, b) => a.pmCount - b.pmCount || a.totalTime - b.totalTime);
+
+                let rank = 1;
+                normal.forEach((r, idx) => {
+                    r.rank = rank++;
+                    r.ecart = idx === 0 ? '0:00' : '+' + secondsToTime(r.totalTime - normal[0].totalTime);
+                });
+
+                withPM.forEach(r => {
+                    r.rank = '-';
+                    r.ecart = r.pmCount + ' PM';
+                });
+
+                aberrant.forEach(r => {
+                    r.rank = '-';
+                    r.ecart = 'Aberrant';
+                });
+
+                parcoursGroups[parcours] = [...normal, ...withPM, ...aberrant];
+            });
+
+            // Statistiques
+            const stats = {
+                totalRunners: runners.length,
+                parcoursTypes: Object.keys(parcoursGroups).length,
+                normalResults: runners.filter(r => !r.isAberrant && r.pmCount === 0).length,
+                withPM: runners.filter(r => r.pmCount > 0 && !r.isAberrant).length,
+                aberrant: runners.filter(r => r.isAberrant).length
+            };
+
+            processedData = { parcoursGroups, runners, stats, parcoursConfig, type: 'laserrun' };
+            displayLaserRunPreview();
+            showStatus('Fichier Laser RUN traité avec succès ! ' + stats.totalRunners + ' coureurs.', 'success');
+            updateDownloadButton();
+        }
+
+        function displayLaserRunPreview() {
+            const { parcoursGroups, runners, stats, parcoursConfig } = processedData;
+
+            // Statistiques
+            const statsHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Types de Parcours</div>
+                    <div class="stat-value">${stats.parcoursTypes}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Participants</div>
+                    <div class="stat-value">${stats.totalRunners}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Résultats Normaux</div>
+                    <div class="stat-value">${stats.normalResults}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avec Postes Manqués</div>
+                    <div class="stat-value">${stats.withPM}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Aberrants</div>
+                    <div class="stat-value">${stats.aberrant}</div>
+                </div>
+            `;
+            document.getElementById('statsContainer').innerHTML = statsHTML;
+            document.getElementById('statsContainer').style.display = 'grid';
+
+            // Tabs et contenu
+            let tabsHTML = '<div class="tab active" data-tab="stats">Statistiques Globales</div>';
+            let contentHTML = '<div class="tab-content active" data-tab="stats">';
+
+            // Statistiques globales
+            const parcoursCount = {};
+            const runnerCount = {};
+            runners.forEach(r => {
+                parcoursCount[r.parcours] = (parcoursCount[r.parcours] || 0) + 1;
+                runnerCount[r.name] = (runnerCount[r.name] || 0) + 1;
+            });
+
+            contentHTML += '<div class="section-title">📊 Nombre de parcours par type</div>';
+            contentHTML += '<div class="table-wrapper"><table><thead><tr><th>Type de Parcours</th><th>Nombre de Participants</th></tr></thead><tbody>';
+            Object.keys(parcoursCount).sort().forEach(p => {
+                contentHTML += `<tr><td>${p}</td><td>${parcoursCount[p]}</td></tr>`;
+            });
+            contentHTML += '</tbody></table></div>';
+
+            contentHTML += '<div class="section-title">👤 Nombre de parcours par coureur</div>';
+            contentHTML += '<div class="table-wrapper"><table><thead><tr><th>Coureur</th><th>Nombre de Parcours</th></tr></thead><tbody>';
+            Object.entries(runnerCount).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).forEach(([name, count]) => {
+                contentHTML += `<tr><td>${name}</td><td>${count}</td></tr>`;
+            });
+            contentHTML += '</tbody></table></div>';
+
+            contentHTML += '</div>';
+
+            // Onglets par parcours
+            const sortedParcours = Object.keys(parcoursGroups).sort((a, b) => {
+                return (parcoursConfig[a]?.order || 999) - (parcoursConfig[b]?.order || 999);
+            });
+
+            sortedParcours.forEach(parcours => {
+                tabsHTML += `<div class="tab" data-tab="${parcours}">${parcours}</div>`;
+                contentHTML += `<div class="tab-content" data-tab="${parcours}">`;
+                contentHTML += '<div class="table-wrapper"><table><thead><tr>';
+                contentHTML += '<th>Classement</th><th>Coureur 1</th><th>Coureur 2</th><th>Temps Total</th><th>Écart</th>';
+
+                const firstRunner = parcoursGroups[parcours][0];
+                if (firstRunner && firstRunner.segments) {
+                    Object.keys(firstRunner.segments).forEach(segName => {
+                        contentHTML += `<th>${segName}</th>`;
+                    });
+                }
+
+                contentHTML += '</tr></thead><tbody>';
+
+                parcoursGroups[parcours].forEach(runner => {
+                    let rowClass = '';
+                    if (runner.isAberrant) rowClass = 'row-aberrant';
+                    else if (runner.pmCount > 0) rowClass = 'row-pm';
+
+                    contentHTML += `<tr class="${rowClass}">`;
+                    contentHTML += `<td>${runner.rank}</td>`;
+                    contentHTML += `<td>${runner.name}</td>`;
+                    contentHTML += `<td></td>`;
+
+                    const totalClass = runner.totalTime < runner.config.totalThreshold ? 'cell-green' : '';
+                    contentHTML += `<td class="${totalClass}">${runner.totalTimeStr}</td>`;
+                    contentHTML += `<td>${runner.ecart}</td>`;
+
+                    Object.values(runner.segments).forEach(seg => {
+                        const segClass = seg.time <= seg.threshold ? 'cell-green' : '';
+                        contentHTML += `<td class="${segClass}">${secondsToTime(seg.time)}</td>`;
+                    });
+
+                    contentHTML += '</tr>';
+                });
+
+                contentHTML += '</tbody></table></div></div>';
+            });
+
+            document.getElementById('previewContainer').innerHTML = `
+                <div class="tabs">${tabsHTML}</div>
+                ${contentHTML}
+            `;
+            document.getElementById('previewContainer').style.display = 'block';
+
+            // Gestion des onglets
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.querySelector(`.tab-content[data-tab="${tabName}"]`).classList.add('active');
+                });
+            });
+        }
+
+        // ===== RAID =====
+        function processRaid(data) {
+            if (data.length < 2) {
+                showStatus('Le fichier CSV est vide ou invalide', 'error');
+                return;
+            }
+
+            const headers = data[0];
+            const epreuveColumns = [19, 30, 41, 52, 63, 74, 85, 96, 107];
+            const epreuves = [];
+
+            epreuveColumns.forEach(idx => {
+                const epreuveName = headers[idx];
+                if (epreuveName && epreuveName.trim() !== '') {
+                    let hasData = false;
+                    for (let i = 1; i < data.length; i++) {
+                        if (data[i][idx + 1] && data[i][idx + 1].trim() !== '') {
+                            hasData = true;
+                            break;
+                        }
+                    }
+                    if (hasData) {
+                        epreuves.push({ name: epreuveName, colIdx: idx });
+                    }
+                }
+            });
+
+            const teams = [];
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row[3] || row[3].trim() === '') continue;
+
+                const isAberrant = (row[7] === '23:59:59' || row[8] === '23:59:59' || !row[7] || !row[8]);
+
+                let hasPM = false;
+                for (let col = 46; col <= 63; col++) {
+                    if (row[col] && row[col].trim() !== '') {
+                        hasPM = true;
+                        break;
+                    }
+                }
+
+                const team = {
+                    dossard: row[1] || '',
+                    name: row[3] || '',
+                    category: row[4] || '',
+                    finalTime: parseTime(row[5]),
+                    finalTimeStr: formatTime(parseTime(row[5])),
+                    courseTime: parseTime(row[9]),
+                    penalties: parseTime(row[11]),
+                    gelTime: parseTime(row[13]),
+                    isAberrant,
+                    hasPM,
+                    epreuvesData: {}
+                };
+
+                epreuves.forEach(epr => {
+                    const timeValue = parseTime(row[epr.colIdx + 1]);
+                    team.epreuvesData[epr.name] = timeValue;
+                });
+
+                teams.push(team);
+            }
+
+            // Classement général
+            const validTeams = teams.filter(t => !t.isAberrant);
+            const aberrantTeams = teams.filter(t => t.isAberrant);
+
+            validTeams.sort((a, b) => a.finalTime - b.finalTime);
+
+            let rank = 1;
+            validTeams.forEach((team, idx) => {
+                team.rankGeneral = rank++;
+                team.ecartGeneral = idx === 0 ? '0:00' : '+' + formatTime(team.finalTime - validTeams[0].finalTime);
+            });
+
+            aberrantTeams.forEach(team => {
+                team.rankGeneral = '-';
+                team.ecartGeneral = 'Aberrant';
+            });
+
+            // Classement par catégorie
+            const categories = {};
+            teams.forEach(team => {
+                if (!categories[team.category]) {
+                    categories[team.category] = [];
+                }
+                categories[team.category].push(team);
+            });
+
+            Object.keys(categories).forEach(cat => {
+                const catTeams = categories[cat].filter(t => !t.isAberrant);
+                catTeams.sort((a, b) => a.finalTime - b.finalTime);
+
+                let catRank = 1;
+                catTeams.forEach((team, idx) => {
+                    team.rankCategory = catRank++;
+                    team.ecartCategory = idx === 0 ? '0:00' : '+' + formatTime(team.finalTime - catTeams[0].finalTime);
+                });
+
+                categories[cat].filter(t => t.isAberrant).forEach(team => {
+                    team.rankCategory = '-';
+                    team.ecartCategory = 'Aberrant';
+                });
+            });
+
+            // Classements par épreuve
+            epreuves.forEach(epr => {
+                const eprTeams = teams.filter(t => !t.isAberrant && t.epreuvesData[epr.name] > 0);
+                eprTeams.sort((a, b) => a.epreuvesData[epr.name] - b.epreuvesData[epr.name]);
+
+                let eprRank = 1;
+                eprTeams.forEach((team, idx) => {
+                    team[`rank_${epr.name}`] = eprRank++;
+                    team[`ecart_${epr.name}`] = idx === 0 ? '0:00' : '+' + formatTime(team.epreuvesData[epr.name] - eprTeams[0].epreuvesData[epr.name]);
+                });
+
+                // Par catégorie pour chaque épreuve
+                Object.keys(categories).forEach(cat => {
+                    const catEprTeams = categories[cat].filter(t => !t.isAberrant && t.epreuvesData[epr.name] > 0);
+                    catEprTeams.sort((a, b) => a.epreuvesData[epr.name] - b.epreuvesData[epr.name]);
+
+                    let catEprRank = 1;
+                    catEprTeams.forEach((team, idx) => {
+                        team[`rankCat_${epr.name}`] = catEprRank++;
+                        team[`ecartCat_${epr.name}`] = idx === 0 ? '0:00' : '+' + formatTime(team.epreuvesData[epr.name] - catEprTeams[0].epreuvesData[epr.name]);
+                    });
+                });
+            });
+
+            const allTeams = [...validTeams, ...aberrantTeams];
+
+            const stats = {
+                totalTeams: teams.length,
+                categories: Object.keys(categories).length,
+                epreuves: epreuves.length,
+                aberrant: aberrantTeams.length
+            };
+
+            processedData = { teams: allTeams, categories, epreuves, stats, type: 'raid' };
+            displayRaidPreview();
+            showStatus('Fichier RAID traité avec succès ! ' + stats.totalTeams + ' équipes.', 'success');
+            updateDownloadButton();
+        }
+
+        function displayRaidPreview() {
+            const { teams, categories, epreuves, stats } = processedData;
+
+            // Statistiques
+            const statsHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Total Équipes</div>
+                    <div class="stat-value">${stats.totalTeams}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Catégories</div>
+                    <div class="stat-value">${stats.categories}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Épreuves</div>
+                    <div class="stat-value">${stats.epreuves}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Résultats Aberrants</div>
+                    <div class="stat-value">${stats.aberrant}</div>
+                </div>
+            `;
+            document.getElementById('statsContainer').innerHTML = statsHTML;
+            document.getElementById('statsContainer').style.display = 'grid';
+
+            // Tabs
+            let tabsHTML = '<div class="tab active" data-tab="scratch">Scratch</div>';
+            Object.keys(categories).forEach(cat => {
+                tabsHTML += `<div class="tab" data-tab="${cat}">${cat}</div>`;
+            });
+
+            // Contenu
+            let contentHTML = '<div class="tab-content active" data-tab="scratch">';
+            contentHTML += generateRaidTable(teams, epreuves);
+            contentHTML += '</div>';
+
+            Object.keys(categories).forEach(cat => {
+                contentHTML += `<div class="tab-content" data-tab="${cat}">`;
+                contentHTML += generateRaidTable(categories[cat], epreuves);
+                contentHTML += '</div>';
+            });
+
+            document.getElementById('previewContainer').innerHTML = `
+                <div class="tabs">${tabsHTML}</div>
+                ${contentHTML}
+            `;
+            document.getElementById('previewContainer').style.display = 'block';
+
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.querySelector(`.tab-content[data-tab="${tabName}"]`).classList.add('active');
+                });
+            });
+        }
+
+        function generateRaidTable(teams, epreuves) {
+            let html = '<div class="table-wrapper"><table><thead><tr>';
+            html += '<th>Dossard</th><th>Équipe</th><th>Catégorie</th><th>Temps Final</th>';
+            html += '<th>Classement Général</th><th>Écart Général</th>';
+            html += '<th>Classement Catégorie</th><th>Écart Catégorie</th>';
+
+            epreuves.forEach(epr => {
+                html += `<th colspan="4">${epr.name}</th>`;
+            });
+
+            html += '</tr><tr>';
+            html += '<th colspan="8"></th>';
+            epreuves.forEach(() => {
+                html += '<th>Temps</th><th>Class. Gén.</th><th>Écart Gén.</th><th>Class. Cat.</th>';
+            });
+            html += '</tr></thead><tbody>';
+
+            teams.forEach(team => {
+                let rowClass = '';
+                if (team.isAberrant) rowClass = 'row-aberrant';
+                else if (team.hasPM) rowClass = 'row-pm';
+
+                html += `<tr class="${rowClass}">`;
+                html += `<td>${team.dossard}</td>`;
+                html += `<td>${team.name}</td>`;
+                html += `<td>${team.category}</td>`;
+                html += `<td>${team.finalTimeStr}</td>`;
+                html += `<td>${team.rankGeneral}</td>`;
+                html += `<td>${team.ecartGeneral}</td>`;
+                html += `<td>${team.rankCategory || '-'}</td>`;
+                html += `<td>${team.ecartCategory || '-'}</td>`;
+
+                epreuves.forEach(epr => {
+                    const time = team.epreuvesData[epr.name];
+                    html += `<td>${time > 0 ? formatTime(time) : '-'}</td>`;
+                    html += `<td>${team[`rank_${epr.name}`] || '-'}</td>`;
+                    html += `<td>${team[`ecart_${epr.name}`] || '-'}</td>`;
+                    html += `<td>${team[`rankCat_${epr.name}`] || '-'}</td>`;
+                });
+
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            return html;
+        }
+
+        // ===== ONE MAN RELAY =====
+        function processOMR(data) {
+            if (data.length < 2) {
+                showStatus('Le fichier CSV est vide ou invalide', 'error');
+                return;
+            }
+
+            const runners = [];
+
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                const name = row[3];
+                const parcours = row[18];
+
+                if (!name || !parcours || name.trim() === '' || parcours.trim() === '') continue;
+
+                const isAberrant = (row[9] === '23:59:59' || row[10] === '23:59:59');
+
+                let pmCount = 0;
+                for (let col = 46; col <= 63; col++) {
+                    if (row[col] && row[col].toString().toUpperCase() === 'PM') {
+                        pmCount++;
+                    }
+                }
+
+                const etablissement = row[4] || '';
+                const totalTime = parseTime(row[11]);
+
+                const postes = [];
+                const posteNumbers = [46, 48, 50, 52, 54, 56];
+                const posteTimes = [47, 49, 51, 53, 55, 57];
+
+                for (let j = 0; j < posteNumbers.length; j++) {
+                    const posteNum = row[posteNumbers[j]];
+                    const posteTime = row[posteTimes[j]];
+                    if (posteNum) {
+                        let time = 0;
+                        if (j === 0) {
+                            const startTime = parseTime(row[44]);
+                            const endTime = parseTime(posteTime);
+                            time = endTime - startTime;
+                        } else {
+                            const prevTime = parseTime(row[posteTimes[j - 1]]);
+                            const currTime = parseTime(posteTime);
+                            time = currTime - prevTime;
+                        }
+                        postes.push({ number: posteNum, time: time > 0 ? time : 0 });
+                    }
+                }
+
+                runners.push({
+                    name,
+                    etablissement,
+                    parcours,
+                    totalTime,
+                    totalTimeStr: formatTime(totalTime),
+                    postes,
+                    pmCount,
+                    isAberrant
+                });
+            }
+
+            // Grouper par parcours
+            const parcoursGroups = {};
+            runners.forEach(runner => {
+                if (!parcoursGroups[runner.parcours]) {
+                    parcoursGroups[runner.parcours] = [];
+                }
+                parcoursGroups[runner.parcours].push(runner);
+            });
+
+            // Classer dans chaque parcours
+            Object.keys(parcoursGroups).forEach(parcours => {
+                const group = parcoursGroups[parcours];
+
+                const normal = group.filter(r => !r.isAberrant && r.pmCount === 0);
+                const withPM = group.filter(r => !r.isAberrant && r.pmCount > 0);
+                const aberrant = group.filter(r => r.isAberrant);
+
+                normal.sort((a, b) => a.totalTime - b.totalTime);
+                withPM.sort((a, b) => a.pmCount - b.pmCount || a.totalTime - b.totalTime);
+
+                let rank = 1;
+                normal.forEach((r, idx) => {
+                    r.rank = rank++;
+                    r.ecart = idx === 0 ? '0:00' : '+' + formatTime(r.totalTime - normal[0].totalTime);
+                });
+
+                withPM.forEach(r => {
+                    r.rank = '-';
+                    r.ecart = r.pmCount + ' PM';
+                });
+
+                aberrant.forEach(r => {
+                    r.rank = '-';
+                    r.ecart = 'Aberrant';
+                });
+
+                parcoursGroups[parcours] = [...normal, ...withPM, ...aberrant];
+            });
+
+            // Grouper par établissement
+            const etablissements = {};
+            runners.forEach(runner => {
+                if (!etablissements[runner.etablissement]) {
+                    etablissements[runner.etablissement] = [];
+                }
+                etablissements[runner.etablissement].push(runner);
+            });
+
+            Object.keys(etablissements).forEach(etab => {
+                etablissements[etab].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+            });
+
+            const stats = {
+                totalRunners: runners.length,
+                parcours: Object.keys(parcoursGroups).length,
+                etablissements: Object.keys(etablissements).length
+            };
+
+            processedData = { runners, parcoursGroups, etablissements, stats, type: 'omr' };
+            displayOMRPreview();
+            showStatus('Fichier One Man Relay traité avec succès ! ' + stats.totalRunners + ' coureurs.', 'success');
+            updateDownloadButton();
+        }
+
+        function displayOMRPreview() {
+            const { parcoursGroups, etablissements, stats } = processedData;
+
+            // Statistiques
+            const statsHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Total Coureurs</div>
+                    <div class="stat-value">${stats.totalRunners}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Parcours</div>
+                    <div class="stat-value">${stats.parcours}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Établissements</div>
+                    <div class="stat-value">${stats.etablissements}</div>
+                </div>
+            `;
+            document.getElementById('statsContainer').innerHTML = statsHTML;
+            document.getElementById('statsContainer').style.display = 'grid';
+
+            // Tabs
+            let tabsHTML = '';
+            Object.keys(parcoursGroups).forEach((parcours, idx) => {
+                const activeClass = idx === 0 ? 'active' : '';
+                tabsHTML += `<div class="tab ${activeClass}" data-tab="parcours-${idx}">${parcours}</div>`;
+            });
+
+            Object.keys(etablissements).forEach((etab, idx) => {
+                tabsHTML += `<div class="tab" data-tab="etab-${idx}">Etab: ${etab}</div>`;
+            });
+
+            // Contenu
+            let contentHTML = '';
+
+            Object.keys(parcoursGroups).forEach((parcours, idx) => {
+                const activeClass = idx === 0 ? 'active' : '';
+                contentHTML += `<div class="tab-content ${activeClass}" data-tab="parcours-${idx}">`;
+                contentHTML += '<div class="table-wrapper"><table><thead><tr>';
+                contentHTML += '<th>Classement</th><th>Coureur</th><th>Établissement</th><th>Temps</th><th>Écart/PM</th>';
+
+                const firstRunner = parcoursGroups[parcours][0];
+                if (firstRunner && firstRunner.postes.length > 0) {
+                    firstRunner.postes.forEach(() => {
+                        contentHTML += '<th>Poste</th><th>Temps</th>';
+                    });
+                }
+
+                contentHTML += '</tr></thead><tbody>';
+
+                parcoursGroups[parcours].forEach(runner => {
+                    let rowClass = '';
+                    if (runner.isAberrant) rowClass = 'row-aberrant';
+                    else if (runner.pmCount > 0) rowClass = 'row-pm';
+
+                    contentHTML += `<tr class="${rowClass}">`;
+                    contentHTML += `<td>${runner.rank}</td>`;
+                    contentHTML += `<td>${runner.name}</td>`;
+                    contentHTML += `<td>${runner.etablissement}</td>`;
+                    contentHTML += `<td>${runner.totalTimeStr}</td>`;
+                    contentHTML += `<td>${runner.ecart}</td>`;
+
+                    runner.postes.forEach(poste => {
+                        contentHTML += `<td>${poste.number}</td>`;
+                        contentHTML += `<td>${formatTime(poste.time)}</td>`;
+                    });
+
+                    contentHTML += '</tr>';
+                });
+
+                contentHTML += '</tbody></table></div></div>';
+            });
+
+            Object.keys(etablissements).forEach((etab, idx) => {
+                contentHTML += `<div class="tab-content" data-tab="etab-${idx}">`;
+                contentHTML += '<div class="table-wrapper"><table><thead><tr>';
+                contentHTML += '<th>Coureur</th><th>Parcours</th><th>Classement</th><th>Temps</th>';
+                contentHTML += '</tr></thead><tbody>';
+
+                etablissements[etab].forEach(runner => {
+                    let rowClass = '';
+                    if (runner.isAberrant) rowClass = 'row-aberrant';
+                    else if (runner.pmCount > 0) rowClass = 'row-pm';
+
+                    contentHTML += `<tr class="${rowClass}">`;
+                    contentHTML += `<td>${runner.name}</td>`;
+                    contentHTML += `<td>${runner.parcours}</td>`;
+                    contentHTML += `<td>${runner.rank}</td>`;
+                    contentHTML += `<td>${runner.totalTimeStr}</td>`;
+                    contentHTML += '</tr>';
+                });
+
+                contentHTML += '</tbody></table></div></div>';
+            });
+
+            document.getElementById('previewContainer').innerHTML = `
+                <div class="tabs">${tabsHTML}</div>
+                ${contentHTML}
+            `;
+            document.getElementById('previewContainer').style.display = 'block';
+
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.querySelector(`.tab-content[data-tab="${tabName}"]`).classList.add('active');
+                });
+            });
+        }
+
+        // ===== FONCTIONS EXPORT =====
+        function downloadExcel() {
+            const wb = XLSX.utils.book_new();
+
+            if (processedData.type === 'laserrun') {
+                const { parcoursGroups, runners, parcoursConfig } = processedData;
+
+                // Onglet Statistiques
+                const statsData = [];
+                statsData.push(['Nombre de parcours par type']);
+                statsData.push(['Type de Parcours', 'Nombre de Participants']);
+                const parcoursCount = {};
+                runners.forEach(r => {
+                    parcoursCount[r.parcours] = (parcoursCount[r.parcours] || 0) + 1;
+                });
+                Object.keys(parcoursCount).sort().forEach(p => {
+                    statsData.push([p, parcoursCount[p]]);
+                });
+
+                statsData.push([]);
+                statsData.push(['Nombre de parcours par coureur']);
+                statsData.push(['Coureur', 'Nombre de Parcours']);
+                const runnerCount = {};
+                runners.forEach(r => {
+                    runnerCount[r.name] = (runnerCount[r.name] || 0) + 1;
+                });
+                Object.entries(runnerCount).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).forEach(([name, count]) => {
+                    statsData.push([name, count]);
+                });
+
+                const statsWS = XLSX.utils.aoa_to_sheet(statsData);
+                XLSX.utils.book_append_sheet(wb, statsWS, 'Statistiques Globales');
+
+                // Onglets par parcours
+                const sortedParcours = Object.keys(parcoursGroups).sort((a, b) => {
+                    return (parcoursConfig[a]?.order || 999) - (parcoursConfig[b]?.order || 999);
+                });
+
+                sortedParcours.forEach(parcours => {
+                    const sheetData = [];
+                    const headers = ['Classement', 'Coureur 1', 'Coureur 2', 'Temps Total', 'Écart'];
+
+                    const firstRunner = parcoursGroups[parcours][0];
+                    if (firstRunner && firstRunner.segments) {
+                        Object.keys(firstRunner.segments).forEach(segName => {
+                            headers.push(segName);
+                        });
+                    }
+
+                    sheetData.push(headers);
+
+                    parcoursGroups[parcours].forEach(runner => {
+                        const row = [
+                            runner.rank,
+                            runner.name,
+                            '',
+                            runner.totalTimeStr,
+                            runner.ecart
+                        ];
+
+                        if (runner.segments) {
+                            Object.values(runner.segments).forEach(seg => {
+                                row.push(secondsToTime(seg.time));
+                            });
+                        }
+
+                        sheetData.push(row);
+                    });
+
+                    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                    const sheetName = parcours.substring(0, 31).replace(/[:\\\/\?\*\[\]]/g, '_');
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                });
+            } else if (processedData.type === 'raid') {
+                const { teams, categories, epreuves } = processedData;
+
+                // Onglet Scratch
+                const scratchData = [];
+                const headers = ['Dossard', 'Équipe', 'Catégorie', 'Temps Final', 'Classement Général', 'Écart Général', 'Classement Catégorie', 'Écart Catégorie'];
+                epreuves.forEach(epr => {
+                    headers.push(`${epr.name} - Temps`, `${epr.name} - Class. Gén.`, `${epr.name} - Écart Gén.`, `${epr.name} - Class. Cat.`);
+                });
+                scratchData.push(headers);
+
+                teams.forEach(team => {
+                    const row = [
+                        team.dossard,
+                        team.name,
+                        team.category,
+                        team.finalTimeStr,
+                        team.rankGeneral,
+                        team.ecartGeneral,
+                        team.rankCategory || '-',
+                        team.ecartCategory || '-'
+                    ];
+
+                    epreuves.forEach(epr => {
+                        const time = team.epreuvesData[epr.name];
+                        row.push(
+                            time > 0 ? formatTime(time) : '-',
+                            team[`rank_${epr.name}`] || '-',
+                            team[`ecart_${epr.name}`] || '-',
+                            team[`rankCat_${epr.name}`] || '-'
+                        );
+                    });
+
+                    scratchData.push(row);
+                });
+
+                const scratchWS = XLSX.utils.aoa_to_sheet(scratchData);
+                XLSX.utils.book_append_sheet(wb, scratchWS, 'Scratch');
+
+                // Onglets par catégorie
+                Object.keys(categories).forEach(cat => {
+                    const catData = [];
+                    catData.push(headers);
+
+                    categories[cat].forEach(team => {
+                        const row = [
+                            team.dossard,
+                            team.name,
+                            team.category,
+                            team.finalTimeStr,
+                            team.rankGeneral,
+                            team.ecartGeneral,
+                            team.rankCategory || '-',
+                            team.ecartCategory || '-'
+                        ];
+
+                        epreuves.forEach(epr => {
+                            const time = team.epreuvesData[epr.name];
+                            row.push(
+                                time > 0 ? formatTime(time) : '-',
+                                team[`rank_${epr.name}`] || '-',
+                                team[`ecart_${epr.name}`] || '-',
+                                team[`rankCat_${epr.name}`] || '-'
+                            );
+                        });
+
+                        catData.push(row);
+                    });
+
+                    const catWS = XLSX.utils.aoa_to_sheet(catData);
+                    const sheetName = cat.substring(0, 31).replace(/[:\\\/\?\*\[\]]/g, '_');
+                    XLSX.utils.book_append_sheet(wb, catWS, sheetName);
+                });
+            } else if (processedData.type === 'omr') {
+                const { parcoursGroups, etablissements } = processedData;
+
+                // Onglets par parcours
+                Object.keys(parcoursGroups).forEach(parcours => {
+                    const sheetData = [];
+                    const headers = ['Classement', 'Coureur', 'Établissement', 'Temps', 'Écart/PM'];
+
+                    const firstRunner = parcoursGroups[parcours][0];
+                    if (firstRunner && firstRunner.postes.length > 0) {
+                        firstRunner.postes.forEach(() => {
+                            headers.push('Poste', 'Temps');
+                        });
+                    }
+
+                    sheetData.push(headers);
+
+                    parcoursGroups[parcours].forEach(runner => {
+                        const row = [
+                            runner.rank,
+                            runner.name,
+                            runner.etablissement,
+                            runner.totalTimeStr,
+                            runner.ecart
+                        ];
+
+                        runner.postes.forEach(poste => {
+                            row.push(poste.number, formatTime(poste.time));
+                        });
+
+                        sheetData.push(row);
+                    });
+
+                    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                    const sheetName = parcours.substring(0, 31).replace(/[:\\\/\?\*\[\]]/g, '_');
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                });
+
+                // Onglets par établissement
+                Object.keys(etablissements).forEach(etab => {
+                    const sheetData = [];
+                    sheetData.push(['Coureur', 'Parcours', 'Classement', 'Temps']);
+
+                    etablissements[etab].forEach(runner => {
+                        sheetData.push([
+                            runner.name,
+                            runner.parcours,
+                            runner.rank,
+                            runner.totalTimeStr
+                        ]);
+                    });
+
+                    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                    const sheetName = ('Etab_' + etab).substring(0, 31).replace(/[:\\\/\?\*\[\]]/g, '_');
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                });
+            }
+
+            XLSX.writeFile(wb, 'resultats_traites.xlsx');
+            showStatus('Fichier Excel téléchargé avec succès !', 'success');
+        }
+
+        function downloadCSV() {
+            let csvContent = '';
+
+            if (processedData.type === 'laserrun') {
+                const { parcoursGroups, parcoursConfig } = processedData;
+
+                const sortedParcours = Object.keys(parcoursGroups).sort((a, b) => {
+                    return (parcoursConfig[a]?.order || 999) - (parcoursConfig[b]?.order || 999);
+                });
+
+                sortedParcours.forEach((parcours, pIdx) => {
+                    if (pIdx > 0) csvContent += '\n\n';
+                    csvContent += `"${parcours}"\n`;
+
+                    const headers = ['Classement', 'Coureur 1', 'Coureur 2', 'Temps Total', 'Écart'];
+                    const firstRunner = parcoursGroups[parcours][0];
+                    if (firstRunner && firstRunner.segments) {
+                        Object.keys(firstRunner.segments).forEach(segName => {
+                            headers.push(segName);
+                        });
+                    }
+                    csvContent += headers.map(h => `"${h}"`).join(',') + '\n';
+
+                    parcoursGroups[parcours].forEach(runner => {
+                        const row = [
+                            runner.rank,
+                            runner.name,
+                            '',
+                            runner.totalTimeStr,
+                            runner.ecart
+                        ];
+
+                        if (runner.segments) {
+                            Object.values(runner.segments).forEach(seg => {
+                                row.push(secondsToTime(seg.time));
+                            });
+                        }
+
+                        csvContent += row.map(r => `"${r}"`).join(',') + '\n';
+                    });
+                });
+            } else if (processedData.type === 'raid') {
+                const { teams, epreuves } = processedData;
+
+                const headers = ['Dossard', 'Équipe', 'Catégorie', 'Temps Final', 'Classement Général', 'Écart Général', 'Classement Catégorie', 'Écart Catégorie'];
+                epreuves.forEach(epr => {
+                    headers.push(`${epr.name} - Temps`, `${epr.name} - Class. Gén.`, `${epr.name} - Écart Gén.`, `${epr.name} - Class. Cat.`);
+                });
+                csvContent += headers.map(h => `"${h}"`).join(',') + '\n';
+
+                teams.forEach(team => {
+                    const row = [
+                        team.dossard,
+                        team.name,
+                        team.category,
+                        team.finalTimeStr,
+                        team.rankGeneral,
+                        team.ecartGeneral,
+                        team.rankCategory || '-',
+                        team.ecartCategory || '-'
+                    ];
+
+                    epreuves.forEach(epr => {
+                        const time = team.epreuvesData[epr.name];
+                        row.push(
+                            time > 0 ? formatTime(time) : '-',
+                            team[`rank_${epr.name}`] || '-',
+                            team[`ecart_${epr.name}`] || '-',
+                            team[`rankCat_${epr.name}`] || '-'
+                        );
+                    });
+
+                    csvContent += row.map(r => `"${r}"`).join(',') + '\n';
+                });
+            } else if (processedData.type === 'omr') {
+                const { parcoursGroups } = processedData;
+
+                Object.keys(parcoursGroups).forEach((parcours, pIdx) => {
+                    if (pIdx > 0) csvContent += '\n\n';
+                    csvContent += `"${parcours}"\n`;
+
+                    const headers = ['Classement', 'Coureur', 'Établissement', 'Temps', 'Écart/PM'];
+                    const firstRunner = parcoursGroups[parcours][0];
+                    if (firstRunner && firstRunner.postes.length > 0) {
+                        firstRunner.postes.forEach(() => {
+                            headers.push('Poste', 'Temps');
+                        });
+                    }
+                    csvContent += headers.map(h => `"${h}"`).join(',') + '\n';
+
+                    parcoursGroups[parcours].forEach(runner => {
+                        const row = [
+                            runner.rank,
+                            runner.name,
+                            runner.etablissement,
+                            runner.totalTimeStr,
+                            runner.ecart
+                        ];
+
+                        runner.postes.forEach(poste => {
+                            row.push(poste.number, formatTime(poste.time));
+                        });
+
+                        csvContent += row.map(r => `"${r}"`).join(',') + '\n';
+                    });
+                });
+            }
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'resultats_traites.csv';
+            link.click();
+
+            showStatus('Fichier CSV téléchargé avec succès !', 'success');
+        }
+
+        // ===== FONCTIONS UTILITAIRES =====
+        function colToIndex(col) {
+            let index = 0;
+            for (let i = 0; i < col.length; i++) {
+                index = index * 26 + (col.charCodeAt(i) - 64);
+            }
+            return index - 1;
+        }
+
+        function getCellValue(row, col) {
+            const idx = typeof col === 'number' ? col : colToIndex(col);
+            return row[idx];
+        }
+
+        function timeToSeconds(value) {
+            if (!value) return 0;
+            if (typeof value === 'number') {
+                const dayFraction = value - Math.floor(value);
+                return Math.round(dayFraction * 24 * 60 * 60);
+            }
+            if (typeof value === 'string') {
+                const parts = value.split(':').map(p => parseInt(p, 10));
+                if (parts.length === 3) {
+                    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+                } else if (parts.length === 2) {
+                    return parts[0] * 60 + parts[1];
+                }
+            }
+            return 0;
+        }
+
+        function secondsToTime(seconds) {
+            if (!seconds || seconds <= 0) return '0:00';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            if (h > 0) {
+                return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            }
+            return `${m}:${String(s).padStart(2, '0')}`;
+        }
+
+        function calculateTimeDiff(row, startIdx, endIdx) {
+            const startVal = row[startIdx];
+            const endVal = row[endIdx];
+
+            const startSeconds = timeToSeconds(startVal);
+            const endSeconds = timeToSeconds(endVal);
+
+            if (endSeconds >= startSeconds) {
+                return endSeconds - startSeconds;
+            } else {
+                return (24 * 3600 - startSeconds) + endSeconds;
+            }
+        }
+
+        function parseTime(value) {
+            if (!value || value === '') return 0;
+            if (typeof value === 'string') {
+                const parts = value.split(':').map(p => parseInt(p, 10));
+                if (parts.length === 3) {
+                    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+                } else if (parts.length === 2) {
+                    return parts[0] * 60 + parts[1];
+                } else if (parts.length === 1) {
+                    return parts[0];
+                }
+            }
+            return 0;
+        }
+
+        function formatTime(seconds) {
+            if (!seconds || seconds <= 0) return '0:00';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            if (h > 0) {
+                return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            }
+            return `${m}:${String(s).padStart(2, '0')}`;
+        }
+    </script>
+</body>
+</html>
